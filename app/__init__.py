@@ -2,6 +2,7 @@ from flask import Flask
 from .config import Config
 from .extensions import db
 from .routes import bp as core_bp
+from . import models
 
 def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__)
