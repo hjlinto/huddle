@@ -1,0 +1,5 @@
+season,week,game_date,home_team,away_team,home_score,away_score,home_team_wins
+2024,1,2024-09-08,KC,BUF,27,24,True
+2024,1,2024-09-08,DET,GB,31,17,True
+2024,2,2024-09-15,KC,CIN,21,23,False
+2024,2,2024-09-15,PHI,DAL,28,14,True
