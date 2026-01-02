@@ -2,6 +2,7 @@ from flask import Flask
 from .config import Config
 from .extensions import db
 from .routes import bp as core_bp
+from app.api import register_api
 from . import models
 
 def create_app(config_class: type[Config] = Config) -> Flask:
@@ -13,5 +14,6 @@ def create_app(config_class: type[Config] = Config) -> Flask:
 
     # Register blueprints
     app.register_blueprint(core_bp)
+    register_api(app)
 
     return app

@@ -18,6 +18,21 @@ class Game(db.Model):
 
     is_final = db.Column(db.Boolean, nullable=False, default=False)
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "season": self.season,
+            "week": self.week,
+            "game_date": self.game_date.isoformat() if self.game_date else None,
+            "home_team": self.home_team,
+            "away_team": self.away_team,
+            "home_score": self.home_score,
+            "away_score": self.away_score,
+            "home_team_wins": self.home_team_wins,
+            "is_final": self.is_final,
+        }
+
+
 class Odds(db.Model):
     __tablename__ = 'odds'
     id = db.Column(db.Integer, primary_key=True)
@@ -30,11 +45,27 @@ class Odds(db.Model):
     
     game = db.relationship('Game', backref=db.backref('odds', uselist=False))
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "game_id": self.game_id,
+            "spread": self.spread,
+            "total": self.total,
+            "snapshot_ts": self.snapshot_ts.isoformat() if self.snapshot_ts else None,
+        }
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
 
 class Prediction(db.Model):
     __tablename__ = 'predictions'
@@ -47,8 +78,8 @@ class Prediction(db.Model):
     
     # prediction fields
     predicted_winner = db.Column(db.String(50), nullable=False)
-    predicted_spread = db.Column(db.String(20), nullable=True)
-    predicted_total = db.Column(db.String(10), nullable=True)
+    predicted_spread = db.Column(db.Float(20), nullable=True)
+    predicted_total = db.Column(db.Float(10), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
     # grading
@@ -64,3 +95,18 @@ class Prediction(db.Model):
     __table_args__ = (
         db.UniqueConstraint('user_id', 'game_id', name='unique_prediction_per_game'),
     )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "game_id": self.game_id,
+            "predicted_winner": self.predicted_winner,
+            "predicted_spread": self.predicted_spread,
+            "predicted_total": self.predicted_total,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "winner_correct": self.winner_correct,
+            "spread_correct": self.spread_correct,
+            "total_correct": self.total_correct,
+            "graded_at": self.graded_at.isoformat() if self.graded_at else None,
+        }
