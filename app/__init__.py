@@ -4,10 +4,13 @@ from .extensions import db
 from .routes import bp as core_bp
 from app.api import register_api
 from . import models
+from flask_cors import CORS
 
 def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    CORS(app, resources={r'/api/*': {"origins": "*"}})
 
     # Initialize extensions
     db.init_app(app)

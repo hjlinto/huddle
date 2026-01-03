@@ -78,8 +78,8 @@ class Prediction(db.Model):
     
     # prediction fields
     predicted_winner = db.Column(db.String(50), nullable=False)
-    predicted_spread = db.Column(db.Float(20), nullable=True)
-    predicted_total = db.Column(db.Float(10), nullable=True)
+    predicted_spread = db.Column(db.String(20), nullable=True)
+    predicted_total = db.Column(db.String(10), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
     # grading
