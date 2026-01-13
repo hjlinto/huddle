@@ -1,3 +1,5 @@
+from datetime import timedelta
+import os
 from flask import Flask
 from .config import Config
 from .extensions import db
@@ -12,7 +14,8 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    app.config["JWT_SECRET_KEY"] = "change-this-in-prod"
+    app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "dev-change-me")
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=7)
     JWTManager(app)
 
 
