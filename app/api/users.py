@@ -35,7 +35,7 @@ def me():
 @jwt_required()
 def my_stats(league: str):
     league = (league or "").strip().lower()
-    if league not in ("nfl", "cfb"):
+    if league not in ("nfl", "ncaaf"):
         return jsonify({"error": "Invalid league"}), 400
     
     user_id = int(get_jwt_identity())
