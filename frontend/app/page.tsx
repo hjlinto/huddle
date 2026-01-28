@@ -21,6 +21,8 @@ type Pick = {
   predicted_total: "" | "over" | "under";
 };
 
+type League = "nfl" | "ncaaf";
+
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
 
 const selectStyle: React.CSSProperties = {
@@ -49,7 +51,17 @@ function authHeaders(): Record<string, string> {
   return headers;
 }
 
+function logout() {
+  try {
+    localStorage.removeItem("access_token");
+  } catch {
+    // ignore
+  }
+  window.location.href = "/login";
+}
+
 export default function PicksPage() {
+  const [league, setLeague] = useState<League>("nfl");
   const [season, setSeason] = useState<number>(2024);
   const [week, setWeek] = useState<number>(1);
 
@@ -73,7 +85,7 @@ export default function PicksPage() {
     setStatus("Loading week…");
 
     try {
-      const res = await fetch(`${API}/api/weeks/${season}/${week}/me`, {
+      const res = await fetch(`${API}/api/weeks/${league}/${season}/${week}/me`, {
         headers: authHeaders(),
       });
 
@@ -85,7 +97,7 @@ export default function PicksPage() {
 
       const data = await res.json();
 
-      // backend returns { season, week, games: [...] }
+      // backend returns { league, season, week, games: [...] }
       const rows = Array.isArray(data) ? data : data?.games ?? [];
 
       const normalized: Game[] = rows.map((row: any) => ({
@@ -100,7 +112,7 @@ export default function PicksPage() {
 
       for (const row of rows) {
         const g = row.game;
-        const p = row.my_prediction; // backend key
+        const p = row.my_prediction;
 
         nextPicks[g.id] = p
           ? {
@@ -116,7 +128,9 @@ export default function PicksPage() {
       setPicks(nextPicks);
       setPredictionIds(nextIds);
 
-      setStatus(`Loaded ${normalized.length} games.`);
+      setStatus(
+        `Loaded ${normalized.length} games. (${league.toUpperCase()} ${season} Week ${week})`
+      );
     } catch (e: any) {
       console.error(e);
       setStatus(`Failed to load week: ${e?.message ?? "unknown error"}`);
@@ -133,6 +147,7 @@ export default function PicksPage() {
   }
 
   function scheduleAutosave(gameId: number, pick: Pick) {
+    // keep your behavior: only autosave once winner is selected
     if (pick.predicted_winner === "") return;
 
     if (saveTimers.current[gameId]) {
@@ -206,12 +221,43 @@ export default function PicksPage() {
   /* -------------------- UI -------------------- */
   return (
     <main style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700 }}>My Weekly Picks</h1>
-      <p style={{ marginTop: 8, opacity: 0.75 }}>
-        Load games and make your picks (auto-saved).
-      </p>
+      {/* Header / Nav */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700 }}>My Weekly Picks</h1>
+          <p style={{ marginTop: 8, opacity: 0.75 }}>
+            Load games and make your picks (auto-saved).
+          </p>
+        </div>
 
-      <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            League
+            <select
+              value={league}
+              onChange={(e) => setLeague(e.target.value as League)}
+              style={selectStyle}
+            >
+              <option value="nfl" style={optionStyle}>
+                NFL
+              </option>
+              <option value="ncaaf" style={optionStyle}>
+                NCAAF
+              </option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
         <label>
           Season{" "}
           <input
@@ -235,8 +281,15 @@ export default function PicksPage() {
         <button onClick={loadWeek}>Load Week</button>
       </div>
 
+      {/* Spread reminder */}
+      <div style={{ marginTop: 10, fontSize: 13, opacity: 0.8 }}>
+        <strong>Spread tip:</strong> Negative spread (e.g., <strong>-3</strong>) means the{" "}
+        <strong>home team is favored by 3</strong>. Positive spread means the home team is the underdog.
+      </div>
+
       {status && <div style={{ marginTop: 12 }}>{status}</div>}
 
+      {/* Table */}
       <div style={{ marginTop: 18 }}>
         {games.length === 0 ? (
           <div>No games loaded.</div>
@@ -244,11 +297,11 @@ export default function PicksPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                <th>Matchup</th>
-                <th>Odds</th>
-                <th>Winner</th>
-                <th>ATS</th>
-                <th>Total</th>
+                <th style={{ textAlign: "left", padding: "8px 6px" }}>Matchup</th>
+                <th style={{ textAlign: "left", padding: "8px 6px" }}>Odds</th>
+                <th style={{ textAlign: "left", padding: "8px 6px" }}>Winner</th>
+                <th style={{ textAlign: "left", padding: "8px 6px" }}>ATS</th>
+                <th style={{ textAlign: "left", padding: "8px 6px" }}>Total</th>
               </tr>
             </thead>
             <tbody>
@@ -256,15 +309,15 @@ export default function PicksPage() {
                 const p = picks[g.id];
 
                 return (
-                  <tr key={g.id}>
-                    <td>
+                  <tr key={g.id} style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                    <td style={{ padding: "10px 6px" }}>
                       {g.away_team} @ {g.home_team}
                     </td>
-                    <td>
+                    <td style={{ padding: "10px 6px" }}>
                       Spread: {g.odds?.spread ?? "—"} <br />
                       Total: {g.odds?.total ?? "—"}
                     </td>
-                    <td>
+                    <td style={{ padding: "10px 6px" }}>
                       <select
                         value={p?.predicted_winner ?? ""}
                         onChange={(e) =>
@@ -285,7 +338,7 @@ export default function PicksPage() {
                         </option>
                       </select>
                     </td>
-                    <td>
+                    <td style={{ padding: "10px 6px" }}>
                       <select
                         value={p?.predicted_spread ?? ""}
                         onChange={(e) =>
@@ -306,7 +359,7 @@ export default function PicksPage() {
                         </option>
                       </select>
                     </td>
-                    <td>
+                    <td style={{ padding: "10px 6px" }}>
                       <select
                         value={p?.predicted_total ?? ""}
                         onChange={(e) =>

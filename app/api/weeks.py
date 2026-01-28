@@ -4,10 +4,20 @@ from app.models import Game, Prediction
 
 weeks_bp = Blueprint("weeks", __name__)
 
+ALLOWED_LEAGUES = {"nfl", "ncaaf"}
+
+def _normalize_league(league: str):
+    league = (league or "").strip().lower()
+    return league
+
 # Returns all predictions for the week (all users)
-@weeks_bp.get("/<int:season>/<int:week>")
-def week_overview(season: int, week: int):
-    games = Game.query.filter_by(season=season, week=week).all()
+@weeks_bp.get("/<string:league>/<int:season>/<int:week>")
+def week_overview(league: str, season: int, week: int):
+    league = _normalize_league(league)
+    if league not in ALLOWED_LEAGUES:
+        return jsonify({"error": "Invalid league"}), 404
+
+    games = Game.query.filter_by(league=league, season=season, week=week).all()
 
     response = []
     for g in games:
@@ -19,18 +29,23 @@ def week_overview(season: int, week: int):
         })
 
     return jsonify({
+        "league": league,
         "season": season,
         "week": week,
         "games": response
     }), 200
 
 # Returns games, odds, *current user's* prediction
-@weeks_bp.get("/<int:season>/<int:week>/me")
+@weeks_bp.get("/<string:league>/<int:season>/<int:week>/me")
 @jwt_required()
-def my_week(season: int, week: int):
+def my_week(league: str, season: int, week: int):
+    league = _normalize_league(league)
+    if league not in ALLOWED_LEAGUES:
+        return jsonify({"error": "Invalid league"}), 404
+
     user_id = int(get_jwt_identity())
 
-    games = Game.query.filter_by(season=season, week=week).all()
+    games = Game.query.filter_by(league=league, season=season, week=week).all()
 
     response = []
     for g in games:
@@ -46,6 +61,7 @@ def my_week(season: int, week: int):
         })
 
     return jsonify({
+        "league": league,
         "season": season,
         "week": week,
         "games": response

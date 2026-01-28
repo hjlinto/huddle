@@ -31,9 +31,13 @@ def me():
     return jsonify(u.to_dict()), 200
 
 # Current user stats
-@users_bp.get("/me/stats")
+@users_bp.get("/<string:league>/me/stats")
 @jwt_required()
-def my_stats():
+def my_stats(league: str):
+    league = (league or "").strip().lower()
+    if league not in ("nfl", "cfb"):
+        return jsonify({"error": "Invalid league"}), 400
+    
     user_id = int(get_jwt_identity())
 
     season = request.args.get("season", type=int)
@@ -44,6 +48,7 @@ def my_stats():
         .join(Game, Prediction.game_id == Game.id)
         .filter(Prediction.user_id == user_id)
         .filter(Prediction.graded_at.isnot(None))
+        .filter(Game.league == league)
     )
 
     if season is not None:
@@ -54,6 +59,7 @@ def my_stats():
     preds = q.all()
 
     return jsonify({
+        "league": league,
         "counts": {"predictions": len(preds)},
         "winner": _record(preds, "winner_correct"),
         "ats": _record(preds, "spread_correct"),

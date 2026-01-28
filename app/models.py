@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 class Game(db.Model):
     __tablename__ = 'games'
     id = db.Column(db.Integer, primary_key=True)
+    league = db.Column(db.String(50), nullable=False)
     season = db.Column(db.Integer, nullable=False)
     week = db.Column(db.Integer, nullable=False)
     game_date = db.Column(db.Date, nullable=False)
@@ -22,6 +23,7 @@ class Game(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
+            "league": self.league,
             "season": self.season,
             "week": self.week,
             "game_date": self.game_date.isoformat() if self.game_date else None,

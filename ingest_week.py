@@ -48,6 +48,7 @@ def as_int_or_none(x):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--league", type=str, required =True, choices=["nfl", "ncaaf"], help="League to ingest data for")
     ap.add_argument("--season", type=int, required=True, help="Season year to ingest data for")
     ap.add_argument("--week", type=int, required=True, help="Week number to ingest data for")
     ap.add_argument("--weekfile", type=str, required=True, help="Week CSV file containing games+odds and optional finals")
@@ -68,6 +69,7 @@ def main():
         odds_upserted = 0
         finals_upserted = 0
         any_finals_applied = False
+        graded_count = 0
 
         for r in rows:
             game_date = parse_date(r.get("game_date"))
@@ -76,6 +78,7 @@ def main():
 
             # Upsert game by (season, week, home_team, away_team)
             g = Game.query.filter_by(
+                league=args.league,
                 season=args.season,
                 week=args.week,
                 home_team=home,
@@ -84,6 +87,7 @@ def main():
 
             if not g:
                 g = Game(
+                    league=args.league,
                     season=args.season,
                     week=args.week,
                     home_team=home,
@@ -144,6 +148,7 @@ def main():
         print(f"Odds upserted:   {odds_upserted}")
         if has_finals_cols:
             print(f"Finals applied:  {finals_upserted}")
+        if args.grade:
             print(f"Predictions graded: {graded_count}")
 
 if __name__ == "__main__":
