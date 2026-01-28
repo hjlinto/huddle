@@ -25,7 +25,10 @@ type League = "nfl" | "ncaaf";
 type LeagueFilter = League | "both";
 type WeekMode = "overall" | "single" | "by_week";
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
+const API = process.env.NEXT_PUBLIC_API_BASE_URL;
+if (!API) {
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+}
 
 const USERS_PREFIX = "/api/users";
 

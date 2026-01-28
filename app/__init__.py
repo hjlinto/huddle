@@ -18,7 +18,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=7)
     JWTManager(app)
 
-
+  
     CORS(app, resources={r'/api/*': {"origins": "*"}})
 
     # Initialize extensions
