@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 predictions_bp = Blueprint('predictions', __name__)
 
+# List predictions for the authenticated user
 @predictions_bp.get('/')
 @jwt_required()
 def list_predictions():
@@ -20,6 +21,7 @@ def list_predictions():
 
     return jsonify([p.to_dict() for p in q.all()])
 
+# Create or update a prediction
 @predictions_bp.post('/')
 @jwt_required()
 def create_or_update_prediction():
@@ -48,6 +50,7 @@ def create_or_update_prediction():
     db.session.commit()
     return jsonify(p.to_dict()), 200
 
+# Update an existing prediction
 @predictions_bp.put("/<int:prediction_id>")
 @jwt_required()
 def update_prediction(prediction_id: int):
@@ -56,7 +59,6 @@ def update_prediction(prediction_id: int):
 
     p = Prediction.query.get_or_404(prediction_id)
 
-    # ✅ this is what you're missing
     if p.user_id != user_id:
         return jsonify({"message": "Forbidden"}), 403
 

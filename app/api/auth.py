@@ -5,6 +5,7 @@ from flask_jwt_extended import create_access_token
 
 auth_bp = Blueprint("auth", __name__, url_prefix='/api/auth')
 
+# User Registration Endpoint
 @auth_bp.post('/register')
 def register():
     data = request.get_json()
@@ -21,6 +22,7 @@ def register():
     access_token = create_access_token(identity=str(user.id))
     return jsonify({"access_token": access_token}), 201
 
+# User Login Endpoint
 @auth_bp.post('/login')
 def login():
     data = request.get_json() or {}

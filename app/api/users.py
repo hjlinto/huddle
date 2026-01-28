@@ -4,6 +4,7 @@ from app.extensions import db
 
 users_bp = Blueprint('users', __name__)
 
+# Create a new user
 @users_bp.post('/')
 def create_user():
     data = request.get_json()
@@ -17,11 +18,13 @@ def create_user():
     
     return jsonify(u.to_dict()), 201
 
+# List all users
 @users_bp.get('/')
 def list_users():
     users = User.query.all()
     return jsonify([u.to_dict() for u in users])
 
+# Get statistics for a specific user's predictions
 @users_bp.get('/<int:user_id>/stats')
 def user_stats(user_id):
 
