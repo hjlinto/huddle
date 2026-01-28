@@ -6,6 +6,10 @@ import { apiFetch } from "@/lib/api";
 import { setToken } from "@/lib/auth";
 import Link from "next/link";
 
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -16,17 +20,33 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
+
+    const eNorm = email.trim().toLowerCase();
+    const pw = password;
+
+    if (!eNorm || !pw) {
+      setErr("Email and password are required.");
+      return;
+    }
+
+    if (!isValidEmail(eNorm)) {
+      setErr("Please enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
+
     try {
       const data = await apiFetch("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: eNorm, password: pw }),
       });
+
       setToken(data.access_token);
       router.refresh();
       router.push("/stats");
-    } catch (e: any) {
-      setErr(e?.message ?? "Login failed");
+    } catch {
+      setErr("Invalid email or password.");
     } finally {
       setLoading(false);
     }
@@ -42,6 +62,7 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
+
         <input
           placeholder="Password"
           type="password"
@@ -49,10 +70,7 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-        >
+        <button type="submit" disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </button>
 
@@ -60,17 +78,17 @@ export default function LoginPage() {
       </form>
 
       <p style={{ marginTop: 12, opacity: 0.8 }}>
-          No account?{" "}
-          <Link 
-            href="/register"
-            style={{
-              color: "#2563EB",
-              textDecoration: "underline",
-              fontWeight: "500",
-            }}
-          >
-            Register
-            </Link>
+        No account?{" "}
+        <Link
+          href="/register"
+          style={{
+            color: "#2563EB",
+            textDecoration: "underline",
+            fontWeight: 500,
+          }}
+        >
+          Register
+        </Link>
       </p>
     </div>
   );

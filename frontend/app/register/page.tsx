@@ -6,6 +6,18 @@ import { apiFetch } from "@/lib/api";
 import { setToken } from "@/lib/auth";
 import Link from "next/link";
 
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+// Rules: >= 8 chars, at least 1 uppercase, at least 1 number
+function validatePassword(pw: string): string | null {
+  if (!pw || pw.length < 8) return "Password must be at least 8 characters long.";
+  if (!/[A-Z]/.test(pw)) return "Password must contain at least one uppercase letter.";
+  if (!/\d/.test(pw)) return "Password must contain at least one number.";
+  return null;
+}
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -20,22 +32,39 @@ export default function RegisterPage() {
     e.preventDefault();
     setErr(null);
 
-    if (!username || !email || !password) {
+    const u = username.trim();
+    const eNorm = email.trim().toLowerCase();
+    const pw = password;
+
+    if (!u || !eNorm || !pw) {
       setErr("All fields are required.");
+      return;
+    }
+
+    if (!isValidEmail(eNorm)) {
+      setErr("Please enter a valid email address.");
+      return;
+    }
+
+    const pwErr = validatePassword(pw);
+    if (pwErr) {
+      setErr(pwErr);
       return;
     }
 
     setLoading(true);
 
     try {
+      // 1) Register
       await apiFetch("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username: u, email: eNorm, password: pw }),
       });
 
+      // 2) Login right away to get token
       const data = await apiFetch("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: eNorm, password: pw }),
       });
 
       setToken(data.access_token);
@@ -66,16 +95,13 @@ export default function RegisterPage() {
         />
 
         <input
-          placeholder="Password"
+          placeholder="Password (min 8, 1 uppercase, 1 number)"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <button
-          type="submit" 
-          disabled={loading}
-        >
+        <button type="submit" disabled={loading}>
           {loading ? "Creating account..." : "Create account"}
         </button>
 
@@ -83,17 +109,17 @@ export default function RegisterPage() {
       </form>
 
       <p style={{ marginTop: 12, opacity: 0.8 }}>
-          Already have an account?{" "}
-          <Link 
-            href="/login"
-            style={{
-              color: "#2563EB",
-              textDecoration: "underline",
-              fontWeight: "500",
-            }}
-          >
-            Login
-            </Link>
+        Already have an account?{" "}
+        <Link
+          href="/login"
+          style={{
+            color: "#2563EB",
+            textDecoration: "underline",
+            fontWeight: 500,
+          }}
+        >
+          Login
+        </Link>
       </p>
     </div>
   );
