@@ -1,4 +1,4 @@
-# 🏈 Football Prediction & Grading API
+# 🏈 Football Prediction Pipeline API
 
 An API-first football prediction platform that ingests weekly game + odds data, allows authenticated users to submit picks (winner / spread / total), and grades predictions after final scores are uploaded. This project is intentionally **backend-forward**, showcasing REST API design, relational modeling, ingestion workflows, and production-ready patterns more than frontend aesthetics.
 
