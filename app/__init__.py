@@ -24,6 +24,9 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     # Initialize extensions
     db.init_app(app)
 
+    with app.app_context():
+        db.create_all()
+
     # Register blueprints
     app.register_blueprint(core_bp)
     register_api(app)
