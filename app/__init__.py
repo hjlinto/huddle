@@ -8,6 +8,9 @@ from app.api import register_api
 from . import models
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from app.models import Game
+from scripts.load_games_from_csv import load_games_from_csv
+from scripts.load_odds_from_csv import load_odds_from_csv
 
 
 def create_app(config_class: type[Config] = Config) -> Flask:
