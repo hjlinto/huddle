@@ -3,6 +3,13 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import HeaderNav from "./_components/HeaderNav";
 
+/**
+ * Application layout.
+ *
+ * Owns global page structure, typography configuration,
+ * and shared navigation.
+ */
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

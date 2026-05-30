@@ -1,22 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api";
-import { setToken } from "@/lib/auth";
+/**
+ * Registration page.
+ *
+ * Owns the account creation form UI and registration submission flow.
+ */
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
+import { apiFetch } from "@/services/api";
+import { setToken } from "@/services/auth";
+import { isValidEmail, validatePassword } from "@/services/validation";
 
-// Rules: >= 8 chars, at least 1 uppercase, at least 1 number
-function validatePassword(pw: string): string | null {
-  if (!pw || pw.length < 8) return "Password must be at least 8 characters long.";
-  if (!/[A-Z]/.test(pw)) return "Password must contain at least one uppercase letter.";
-  if (!/\d/.test(pw)) return "Password must contain at least one number.";
-  return null;
-}
+type LoginResponse = {
+  access_token: string;
+};
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -28,50 +28,58 @@ export default function RegisterPage() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ): Promise<void> {
+    event.preventDefault();
     setErr(null);
 
-    const u = username.trim();
-    const eNorm = email.trim().toLowerCase();
-    const pw = password;
+    const normalizedUsername = username.trim();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!u || !eNorm || !pw) {
+    if (!normalizedUsername || !normalizedEmail || !password) {
       setErr("All fields are required.");
       return;
     }
 
-    if (!isValidEmail(eNorm)) {
+    if (!isValidEmail(normalizedEmail)) {
       setErr("Please enter a valid email address.");
       return;
     }
 
-    const pwErr = validatePassword(pw);
-    if (pwErr) {
-      setErr(pwErr);
+    const passwordError = validatePassword(password);
+
+    if (passwordError) {
+      setErr(passwordError);
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1) Register
       await apiFetch("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ username: u, email: eNorm, password: pw }),
+        body: JSON.stringify({
+          username: normalizedUsername,
+          email: normalizedEmail,
+          password,
+        }),
       });
 
-      // 2) Login right away to get token
-      const data = await apiFetch("/api/auth/login", {
+      const response = await apiFetch<LoginResponse>("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email: eNorm, password: pw }),
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password,
+        }),
       });
 
-      setToken(data.access_token);
+      setToken(response.access_token);
+
       router.refresh();
       router.push("/stats");
-    } catch (e: any) {
-      setErr(e?.message ?? "Registration failed");
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -79,26 +87,40 @@ export default function RegisterPage() {
 
   return (
     <div style={{ maxWidth: 420, margin: "32px auto" }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 16 }}>Register</h1>
+      <h1
+        style={{
+          fontSize: 28,
+          fontWeight: 700,
+          marginBottom: 16,
+        }}
+      >
+        Register
+      </h1>
 
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
+      <form
+        onSubmit={onSubmit}
+        style={{
+          display: "grid",
+          gap: 12,
+        }}
+      >
         <input
           placeholder="Username"
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          onChange={(event) => setUsername(event.target.value)}
         />
 
         <input
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(event) => setEmail(event.target.value)}
         />
 
         <input
           placeholder="Password (min 8, 1 uppercase, 1 number)"
           type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
         />
 
         <button type="submit" disabled={loading}>
