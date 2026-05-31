@@ -19,6 +19,9 @@ import type {
   WeeklyStatsRow,
 } from "@/types/stats";
 
+const selectClass =
+  "h-11 min-w-32 rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-200";
+
 function pct(value: number): string {
   if (!Number.isFinite(value)) {
     return "0.0%";
@@ -41,33 +44,32 @@ function StatCard({
   block: RecordBlock;
 }) {
   return (
-    <div
-      style={{
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: 8,
-        padding: 14,
-      }}
-    >
-      <div style={{ fontWeight: 700, marginBottom: 8 }}>{title}</div>
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+            Category
+          </p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
+            {title}
+          </h2>
+        </div>
 
-      <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-        <div>
-          W: <strong>{block.wins}</strong>
-        </div>
-        <div>
-          L: <strong>{block.losses}</strong>
-        </div>
-        <div>
-          P: <strong>{block.pushes}</strong>
-        </div>
-        <div>
-          Total: <strong>{block.total}</strong>
-        </div>
-        <div>
-          Win%: <strong>{pct(block.win_pct)}</strong>
+        <div className="rounded-2xl bg-slate-900 px-4 py-3 text-right text-white">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+            Win %
+          </p>
+          <p className="text-2xl font-bold">{pct(block.win_pct)}</p>
         </div>
       </div>
-    </div>
+
+      <div className="grid gap-3 sm:grid-cols-4">
+        <MiniStat label="Wins" value={block.wins} />
+        <MiniStat label="Losses" value={block.losses} />
+        <MiniStat label="Pushes" value={block.pushes} />
+        <MiniStat label="Total" value={block.total} />
+      </div>
+    </section>
   );
 }
 
@@ -90,7 +92,7 @@ export default function StatsPage() {
   }, []);
 
   async function loadStats() {
-    setStatus("Loading...");
+    setStatus("Loading stats...");
     setStats(null);
     setWeeklyRows([]);
 
@@ -100,9 +102,7 @@ export default function StatsPage() {
 
       const loadOne = async (selectedWeek?: number) => {
         const results = await Promise.all(
-          leagues.map((league) =>
-            fetchUserStats(league, season, selectedWeek)
-          )
+          leagues.map((league) => fetchUserStats(league, season, selectedWeek))
         );
 
         return results.length === 2
@@ -115,7 +115,7 @@ export default function StatsPage() {
 
         setStats(combined);
         setStatus(
-          `Loaded overall stats (${leagueFilter.toUpperCase()}) — Season ${season}.`
+          `Loaded overall stats for ${leagueFilter.toUpperCase()} — Season ${season}.`
         );
 
         return;
@@ -126,7 +126,7 @@ export default function StatsPage() {
 
         setStats(combined);
         setStatus(
-          `Loaded Week ${week} stats (${leagueFilter.toUpperCase()}) — Season ${season}.`
+          `Loaded Week ${week} stats for ${leagueFilter.toUpperCase()} — Season ${season}.`
         );
 
         return;
@@ -150,178 +150,253 @@ export default function StatsPage() {
 
       setWeeklyRows(rows);
       setStatus(
-        `Loaded week-by-week stats (${leagueFilter.toUpperCase()}) — Season ${season} Weeks 1–${maxWeek}.`
+        `Loaded week-by-week stats for ${leagueFilter.toUpperCase()} — Season ${season} Weeks 1–${maxWeek}.`
       );
     } catch (error) {
       console.error(error);
 
       setStatus(
-        `Failed: ${
+        `Failed to load stats: ${
           error instanceof Error ? error.message : "unknown error"
         }`
       );
     }
   }
 
+  const gradedPickCount = stats?.counts.predictions ?? 0;
+
   return (
-    <main style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
-      <div>
-        <h1 style={{ fontSize: 28, fontWeight: 700 }}>My Stats</h1>
-        <p style={{ marginTop: 8, opacity: 0.75 }}>
-          Filter by league and week to see performance overall or week-by-week.
-        </p>
-      </div>
+    <main className="min-h-screen bg-slate-50 text-slate-950">
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        <div className="mb-8 grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+          <div>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">
+              Performance dashboard
+            </p>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-950">
+              Review your prediction results.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+              Track winner, spread, and total performance after completed games
+              are processed by the grading workflow.
+            </p>
+          </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          marginTop: 16,
-          flexWrap: "wrap",
-          alignItems: "end",
-        }}
-      >
-        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          League
-          <select
-            value={leagueFilter}
-            onChange={(event) =>
-              setLeagueFilter(event.target.value as LeagueFilter)
-            }
-            style={{ padding: 8 }}
-          >
-            <option value="nfl">NFL</option>
-            <option value="ncaaf">NCAAF</option>
-            <option value="both">Both</option>
-          </select>
-        </label>
+          <div className="grid grid-cols-3 gap-3 lg:min-w-[420px]">
+            <Metric label="League" value={leagueFilter.toUpperCase()} />
+            <Metric label="Season" value={String(season)} />
+            <Metric label="Graded" value={String(gradedPickCount)} />
+          </div>
+        </div>
 
-        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          Season
-          <input
-            type="number"
-            value={season}
-            onChange={(event) => setSeason(Number(event.target.value))}
-            style={{ padding: 8, width: 120 }}
-          />
-        </label>
+        <section className="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+            <label className="grid gap-2">
+              <span className="text-sm font-medium text-slate-600">League</span>
+              <select
+                value={leagueFilter}
+                onChange={(event) =>
+                  setLeagueFilter(event.target.value as LeagueFilter)
+                }
+                className={selectClass}
+              >
+                <option value="nfl">NFL</option>
+                <option value="ncaaf">NCAAF</option>
+                <option value="both">Both</option>
+              </select>
+            </label>
 
-        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          View
-          <select
-            value={weekMode}
-            onChange={(event) =>
-              setWeekMode(event.target.value as WeekMode)
-            }
-            style={{ padding: 8 }}
-          >
-            <option value="overall">Overall (season)</option>
-            <option value="single">Single week</option>
-            <option value="by_week">Week-by-week</option>
-          </select>
-        </label>
+            <label className="grid gap-2">
+              <span className="text-sm font-medium text-slate-600">Season</span>
+              <select
+                value={season}
+                onChange={(event) => setSeason(Number(event.target.value))}
+                className={selectClass}
+              >
+                <option value={2025}>2025</option>
+                <option value={2024}>2024</option>
+              </select>
+            </label>
 
-        {weekMode === "single" && (
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            Week
-            <input
-              type="number"
-              value={week}
-              onChange={(event) => setWeek(Number(event.target.value))}
-              style={{ padding: 8, width: 100 }}
-              min={1}
-            />
-          </label>
+            <label className="grid gap-2">
+              <span className="text-sm font-medium text-slate-600">View</span>
+              <select
+                value={weekMode}
+                onChange={(event) => setWeekMode(event.target.value as WeekMode)}
+                className={selectClass}
+              >
+                <option value="overall">Overall</option>
+                <option value="single">Single week</option>
+                <option value="by_week">Week-by-week</option>
+              </select>
+            </label>
+
+            <button
+              onClick={loadStats}
+              className="h-11 rounded-xl bg-blue-600 px-6 text-sm font-bold text-white shadow-md transition hover:bg-blue-700"
+            >
+              Load Stats
+            </button>
+          </div>
+
+          {(weekMode === "single" || weekMode === "by_week") && (
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              {weekMode === "single" && (
+                <label className="grid gap-2">
+                  <span className="text-sm font-medium text-slate-600">
+                    Week
+                  </span>
+                  <select
+                    value={week}
+                    onChange={(event) => setWeek(Number(event.target.value))}
+                    className={selectClass}
+                  >
+                    <option value={1}>Week 1</option>
+                    <option value={2}>Week 2</option>
+                  </select>
+                </label>
+              )}
+
+              {weekMode === "by_week" && (
+                <label className="grid gap-2">
+                  <span className="text-sm font-medium text-slate-600">
+                    Weeks to include
+                  </span>
+                  <select
+                    value={maxWeek}
+                    onChange={(event) => setMaxWeek(Number(event.target.value))}
+                    className={selectClass}
+                  >
+                    <option value={2}>Weeks 1–2</option>
+                    <option value={4}>Weeks 1–4</option>
+                    <option value={8}>Weeks 1–8</option>
+                    <option value={18}>Weeks 1–18</option>
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
+
+          {status && (
+            <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
+              {status}
+            </div>
+          )}
+        </section>
+
+        {stats && (weekMode === "overall" || weekMode === "single") && (
+          <section className="grid gap-5">
+            {stats.counts.predictions === 0 && (
+              <EmptyStatsMessage />
+            )}
+
+            <StatCard title="Straight Up" block={stats.winner} />
+            <StatCard title="Against the Spread" block={stats.ats} />
+            <StatCard title="Total Over/Under" block={stats.total} />
+          </section>
         )}
 
         {weekMode === "by_week" && (
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            Weeks (1-N)
-            <input
-              type="number"
-              value={maxWeek}
-              onChange={(event) => setMaxWeek(Number(event.target.value))}
-              style={{ padding: 8, width: 120 }}
-              min={1}
-            />
-          </label>
+          <section className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+            {weeklyRows.length === 0 ? (
+              <div className="p-10 text-center">
+                <h2 className="text-xl font-semibold text-slate-950">
+                  No week-by-week rows loaded
+                </h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Load stats after games have been graded to populate this report.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <th className="px-5 py-4">Week</th>
+                      <th className="px-5 py-4">Graded</th>
+                      <th className="px-5 py-4">Winner</th>
+                      <th className="px-5 py-4">ATS</th>
+                      <th className="px-5 py-4">Total</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {weeklyRows.map((row) => (
+                      <tr
+                        key={row.week}
+                        className="border-b border-slate-100 last:border-0"
+                      >
+                        <td className="px-5 py-4 font-semibold text-slate-950">
+                          Week {row.week}
+                        </td>
+                        <td className="px-5 py-4 text-slate-700">
+                          {row.stats.counts.predictions}
+                        </td>
+                        <td className="px-5 py-4 text-slate-700">
+                          {fmtRecord(row.stats.winner)}
+                        </td>
+                        <td className="px-5 py-4 text-slate-700">
+                          {fmtRecord(row.stats.ats)}
+                        </td>
+                        <td className="px-5 py-4 text-slate-700">
+                          {fmtRecord(row.stats.total)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         )}
 
-        <button onClick={loadStats} style={{ padding: "8px 14px" }}>
-          Load Stats
-        </button>
-      </div>
-
-      {status && <div style={{ marginTop: 12 }}>{status}</div>}
-
-      {stats && (weekMode === "overall" || weekMode === "single") && (
-        <div style={{ marginTop: 18 }}>
-          <div style={{ marginBottom: 12, opacity: 0.85 }}>
-            Graded picks: <strong>{stats.counts.predictions}</strong>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-            <StatCard title="Winner (Straight Up)" block={stats.winner} />
-            <StatCard title="ATS (Against the Spread)" block={stats.ats} />
-            <StatCard title="Total (Over/Under)" block={stats.total} />
-          </div>
-        </div>
-      )}
-
-      {weekMode === "by_week" && (
-        <div style={{ marginTop: 18 }}>
-          {weeklyRows.length === 0 ? (
-            <div style={{ opacity: 0.8 }}>No week-by-week rows loaded.</div>
-          ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "left", padding: "8px 6px" }}>
-                    Week
-                  </th>
-                  <th style={{ textAlign: "left", padding: "8px 6px" }}>
-                    Graded
-                  </th>
-                  <th style={{ textAlign: "left", padding: "8px 6px" }}>
-                    Winner
-                  </th>
-                  <th style={{ textAlign: "left", padding: "8px 6px" }}>
-                    ATS
-                  </th>
-                  <th style={{ textAlign: "left", padding: "8px 6px" }}>
-                    Total
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {weeklyRows.map((row) => (
-                  <tr
-                    key={row.week}
-                    style={{
-                      borderTop: "1px solid rgba(255,255,255,0.12)",
-                    }}
-                  >
-                    <td style={{ padding: "8px 6px" }}>{row.week}</td>
-                    <td style={{ padding: "8px 6px" }}>
-                      {row.stats.counts.predictions}
-                    </td>
-                    <td style={{ padding: "8px 6px" }}>
-                      {fmtRecord(row.stats.winner)}
-                    </td>
-                    <td style={{ padding: "8px 6px" }}>
-                      {fmtRecord(row.stats.ats)}
-                    </td>
-                    <td style={{ padding: "8px 6px" }}>
-                      {fmtRecord(row.stats.total)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
+        {!stats && weekMode !== "by_week" && (
+          <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-950">
+              No stats loaded yet
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Select a league, season, and view, then load your stats.
+            </p>
+          </section>
+        )}
+      </section>
     </main>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-2 whitespace-nowrap text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl bg-slate-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-bold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function EmptyStatsMessage() {
+  return (
+    <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+      <h2 className="font-semibold">No graded picks yet</h2>
+      <p className="mt-1 text-sm leading-6">
+        Your picks are saved, but stats populate after final scores are ingested
+        and the backend grading workflow runs.
+      </p>
+    </section>
   );
 }

@@ -56,10 +56,13 @@ def login_user(data: dict) -> tuple[dict, int]:
     """
     Validate login credentials and create an access token.
     """
-    email = (data.get("email") or "").strip().lower()
+    identifier = (data.get("identifier") or "").strip()
     password = data.get("password") or ""
 
-    user = User.query.filter_by(email=email).first()
+    user = User.query.filter(
+        (User.username == identifier)
+        | (User.email == identifier.lower())
+    ).first()
 
     if not user or not user.check_password(password):
         return {"message": "Invalid credentials"}, 401

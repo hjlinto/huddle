@@ -49,16 +49,11 @@ input:focus {
 }
 
 button {
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  background: transparent;
-  font-weight: 600;
   cursor: pointer;
 }
 
 button:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
 }
 
 button:disabled {

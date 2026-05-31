@@ -18,24 +18,14 @@ import {
 } from "@/services/picks";
 import type { DisplayGame, League, Pick } from "@/types/picks";
 
-const selectStyle: React.CSSProperties = {
-  padding: 8,
-  color: "#000",
-  backgroundColor: "#fff",
-  border: "1px solid #ccc",
-  borderRadius: 4,
-};
-
-const optionStyle: React.CSSProperties = {
-  color: "#000",
-  backgroundColor: "#fff",
-};
-
 const emptyPick: Pick = {
   predicted_winner: "",
   predicted_spread: "",
   predicted_total: "",
 };
+
+const selectClass =
+  "h-11 min-w-28 rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-200";
 
 export default function PicksPage() {
   const [league, setLeague] = useState<League>("nfl");
@@ -46,6 +36,7 @@ export default function PicksPage() {
   const [picks, setPicks] = useState<Record<number, Pick>>({});
   const [predictionIds, setPredictionIds] = useState<Record<number, number>>({});
   const [status, setStatus] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const saveTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
@@ -56,6 +47,7 @@ export default function PicksPage() {
   }, []);
 
   async function loadWeek() {
+    setIsLoading(true);
     setStatus("Loading week...");
 
     try {
@@ -68,7 +60,7 @@ export default function PicksPage() {
       setPredictionIds(nextState.predictionIds);
 
       setStatus(
-        `Loaded ${normalizedGames.length} games. (${league.toUpperCase()} ${season} Week ${week})`
+        `Loaded ${normalizedGames.length} games for ${league.toUpperCase()} ${season} Week ${week}.`
       );
     } catch (error) {
       console.error(error);
@@ -77,6 +69,8 @@ export default function PicksPage() {
           error instanceof Error ? error.message : "unknown error"
         }`
       );
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -116,7 +110,7 @@ export default function PicksPage() {
 
       if (existingPredictionId) {
         await updatePrediction(existingPredictionId, pick);
-        setStatus(`Saved game ${gameId}.`);
+        setStatus("Picks saved.");
         return;
       }
 
@@ -129,11 +123,11 @@ export default function PicksPage() {
         }));
       }
 
-      setStatus(`Saved game ${gameId}.`);
+      setStatus("Picks saved.");
     } catch (error) {
       console.error(error);
       setStatus(
-        `Failed to save game ${gameId}: ${
+        `Failed to save pick: ${
           error instanceof Error ? error.message : "unknown error"
         }`
       );
@@ -141,187 +135,247 @@ export default function PicksPage() {
   }
 
   return (
-    <main style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700 }}>My Weekly Picks</h1>
-          <p style={{ marginTop: 8, opacity: 0.75 }}>
-            Load games and make your picks. Picks autosave after a winner is selected.
-          </p>
+    <main className="min-h-screen bg-slate-50 text-slate-950">
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        <div className="mb-8 grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+          <div>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">
+              Weekly prediction dashboard
+            </p>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-950">
+              Make picks across NFL and college football.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+              Load weekly matchups, review spread and total lines, then submit
+              winner, spread, and over/under picks. Changes autosave to your account.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 lg:min-w-[420px]">
+            <Metric label="League" value={league.toUpperCase()} />
+            <Metric label="Season" value={String(season)} />
+            <Metric label="Week" value={String(week)} />
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            League
-            <select
-              value={league}
-              onChange={(event) => setLeague(event.target.value as League)}
-              style={selectStyle}
-            >
-              <option value="nfl" style={optionStyle}>
-                NFL
-              </option>
-              <option value="ncaaf" style={optionStyle}>
-                NCAAF
-              </option>
-            </select>
-          </label>
-
-          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            Season
-            <input
-              type="number"
-              value={season}
-              onChange={(event) => setSeason(Number(event.target.value))}
-              style={{ ...selectStyle, width: 90 }}
-            />
-          </label>
-
-          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            Week
-            <input
-              type="number"
-              value={week}
-              onChange={(event) => setWeek(Number(event.target.value))}
-              style={{ ...selectStyle, width: 70 }}
-              min={1}
-            />
-          </label>
-
-          <button onClick={loadWeek} style={{ padding: "8px 14px" }}>
-            Load Week
-          </button>
-        </div>
-      </div>
-
-      {status && <p style={{ marginTop: 16 }}>{status}</p>}
-
-      <div style={{ display: "grid", gap: 16, marginTop: 20 }}>
-        {games.map((game) => {
-          const pick = picks[game.id] ?? emptyPick;
-
-          return (
-            <section
-              key={game.id}
-              style={{
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 8,
-                padding: 16,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
+        <section className="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+            <label className="grid gap-2">
+              <span className="text-sm font-medium text-slate-600">League</span>
+              <select
+                value={league}
+                onChange={(event) => setLeague(event.target.value as League)}
+                className={selectClass}
               >
-                <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700 }}>
-                    {game.away_team} at {game.home_team}
-                  </h2>
+                <option value="nfl">NFL</option>
+                <option value="ncaaf">NCAAF</option>
+              </select>
+            </label>
 
-                  <p style={{ opacity: 0.75, marginTop: 4 }}>
-                    {game.game_date ?? "Date TBD"}
-                  </p>
-                </div>
-
-                <div style={{ opacity: 0.85 }}>
-                  <div>Spread: {game.odds?.spread ?? "N/A"}</div>
-                  <div>Total: {game.odds?.total ?? "N/A"}</div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                  gap: 12,
-                  marginTop: 16,
-                }}
+            <label className="grid gap-2">
+              <span className="text-sm font-medium text-slate-600">Season</span>
+              <select
+                value={season}
+                onChange={(event) => setSeason(Number(event.target.value))}
+                className={selectClass}
               >
-                <label style={{ display: "grid", gap: 6 }}>
-                  Winner
-                  <select
-                    value={pick.predicted_winner}
-                    onChange={(event) =>
-                      updatePick(game.id, {
-                        predicted_winner: event.target.value as Pick["predicted_winner"],
-                      })
-                    }
-                    style={selectStyle}
-                  >
-                    <option value="" style={optionStyle}>
-                      Select winner
-                    </option>
-                    <option value="away" style={optionStyle}>
-                      {game.away_team}
-                    </option>
-                    <option value="home" style={optionStyle}>
-                      {game.home_team}
-                    </option>
-                  </select>
-                </label>
+                <option value={2025}>2025</option>
+                <option value={2024}>2024</option>
+              </select>
+            </label>
 
-                <label style={{ display: "grid", gap: 6 }}>
-                  Spread
-                  <select
-                    value={pick.predicted_spread}
-                    onChange={(event) =>
-                      updatePick(game.id, {
-                        predicted_spread: event.target.value as Pick["predicted_spread"],
-                      })
-                    }
-                    style={selectStyle}
-                  >
-                    <option value="" style={optionStyle}>
-                      Select spread pick
-                    </option>
-                    <option value="away" style={optionStyle}>
-                      {game.away_team}
-                    </option>
-                    <option value="home" style={optionStyle}>
-                      {game.home_team}
-                    </option>
-                  </select>
-                </label>
+            <label className="grid gap-2">
+              <span className="text-sm font-medium text-slate-600">Week</span>
+              <select
+                value={week}
+                onChange={(event) => setWeek(Number(event.target.value))}
+                className={selectClass}
+              >
+                <option value={1}>Week 1</option>
+                <option value={2}>Week 2</option>
+              </select>
+            </label>
 
-                <label style={{ display: "grid", gap: 6 }}>
-                  Total
-                  <select
-                    value={pick.predicted_total}
-                    onChange={(event) =>
-                      updatePick(game.id, {
-                        predicted_total: event.target.value as Pick["predicted_total"],
-                      })
-                    }
-                    style={selectStyle}
-                  >
-                    <option value="" style={optionStyle}>
-                      Select total pick
-                    </option>
-                    <option value="over" style={optionStyle}>
-                      Over
-                    </option>
-                    <option value="under" style={optionStyle}>
-                      Under
-                    </option>
-                  </select>
-                </label>
-              </div>
-            </section>
-          );
-        })}
-      </div>
+            <button
+              onClick={loadWeek}
+              disabled={false}
+              className="h-11 rounded-xl bg-blue-600 px-6 text-sm font-bold text-white shadow-md hover:bg-blue-700"
+            >
+              {isLoading ? "Loading..." : "Load Week"}
+            </button>
+          </div>
+
+          {status && (
+            <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
+              {status}
+            </div>
+          )}
+        </section>
+
+        {games.length === 0 ? (
+          <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-950">
+              No games loaded yet
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Choose a league, season, and week, then load the slate.
+            </p>
+          </section>
+        ) : (
+          <div className="grid gap-5">
+            {games.map((game) => {
+              const pick = picks[game.id] ?? emptyPick;
+              const hasPick =
+                pick.predicted_winner ||
+                pick.predicted_spread ||
+                pick.predicted_total;
+
+              return (
+                <section
+                  key={game.id}
+                  className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-5 border-b border-slate-100 p-6">
+                    <div>
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                          {league.toUpperCase()} Week {week}
+                        </span>
+                        {hasPick && (
+                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                            Picks saved
+                          </span>
+                        )}
+                      </div>
+
+                      <h2 className="text-2xl font-bold tracking-tight text-slate-950">
+                        {game.away_team}{" "}
+                        <span className="text-slate-400">at</span>{" "}
+                        {game.home_team}
+                      </h2>
+
+                      <p className="mt-2 text-sm font-medium text-slate-500">
+                        {game.game_date ?? "Date TBD"}
+                      </p>
+                    </div>
+
+                    <div className="grid min-w-48 grid-cols-2 gap-3">
+                      <LineStat label="Spread" value={game.odds?.spread ?? "N/A"} />
+                      <LineStat label="Total" value={game.odds?.total ?? "N/A"} />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 p-6 md:grid-cols-3">
+                    <PickSelect
+                      label="Winner"
+                      value={pick.predicted_winner}
+                      onChange={(value) =>
+                        updatePick(game.id, {
+                          predicted_winner: value as Pick["predicted_winner"],
+                        })
+                      }
+                      options={[
+                        { value: "", label: "Select winner" },
+                        { value: "away", label: game.away_team },
+                        { value: "home", label: game.home_team },
+                      ]}
+                    />
+
+                    <PickSelect
+                      label="Against the spread"
+                      value={pick.predicted_spread}
+                      onChange={(value) =>
+                        updatePick(game.id, {
+                          predicted_spread: value as Pick["predicted_spread"],
+                        })
+                      }
+                      options={[
+                        { value: "", label: "Select spread pick" },
+                        { value: "away", label: game.away_team },
+                        { value: "home", label: game.home_team },
+                      ]}
+                    />
+
+                    <PickSelect
+                      label="Total"
+                      value={pick.predicted_total}
+                      onChange={(value) =>
+                        updatePick(game.id, {
+                          predicted_total: value as Pick["predicted_total"],
+                        })
+                      }
+                      options={[
+                        { value: "", label: "Select total pick" },
+                        { value: "over", label: "Over" },
+                        { value: "under", label: "Under" },
+                      ]}
+                    />
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </main>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-2 whitespace-nowrap text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function LineStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-2xl bg-slate-50 p-4 text-center">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-1 text-lg font-bold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function PickSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-sm font-semibold text-slate-700">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={selectClass}
+      >
+        {options.map((option) => (
+          <option key={`${label}-${option.value}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
