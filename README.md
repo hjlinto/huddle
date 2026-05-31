@@ -1,12 +1,57 @@
-# 🏈 Football Prediction Pipeline API
+# 🏈 Huddle
 
-An API-first football prediction platform that ingests weekly game + odds data, allows authenticated users to submit picks (winner / spread / total), and grades predictions after final scores are uploaded. This project is intentionally **backend-forward**, showcasing REST API design, relational modeling, ingestion workflows, and production-ready patterns more than frontend aesthetics.
+A full-stack football prediction platform that allows users to submit NFL and NCAAF picks, automatically grade predictions against final results, and analyze performance through a cloud-deployed analytics dashboard.
+
+This project was intentionally designed to emphasize:
+
+- REST API design
+- authentication and user isolation
+- PostgreSQL relational modeling
+- data ingestion workflows
+- automated grading pipelines
+- frontend/backend integration
+- containerized deployment
 
 ---
 
 ## Live Demo
 
 [Check out the deployed app](https://nfl-prediction-pipeline.vercel.app/login)
+
+---
+## Current Status
+
+**Portfolio MVP / Deployed Application**
+
+Current functionality includes:
+
+- JWT Authentication
+- NFL and NCAAF pick management
+- Multi-user prediction tracking
+- PostgreSQL persistence
+- Automated grading workflows
+- Performance analytics dashboard
+- Docker Compose local deployment
+- Render/Vercel cloud deployment
+
+---
+
+## Demo Media
+
+**Prediction Workflow**
+![Prediction Workflow](assets/picks_workflow.gif)
+
+**Authentication**
+
+![Authentication](assets/registration_login.gif)
+
+**Picks Persistence**
+
+![Picks Persistence](assets/pick_persistence.gif)
+
+**Statistics Dashboard**
+
+![Statistics Dashboard](assets/stats.gif)
 
 ---
 
@@ -19,7 +64,6 @@ An API-first football prediction platform that ingests weekly game + odds data, 
 
 - **Game, Odds, and Results Pipeline**
   - Weekly ingestion of games and betting lines (spread/total) via CSV
-  - Manual score ingestion to finalize games when live APIs aren’t available
 
 - **Prediction Submission**
   - Users can submit picks for:
@@ -41,6 +85,28 @@ An API-first football prediction platform that ingests weekly game + odds data, 
   - Clear error handling and consistent JSON responses
 
 ---
+
+## Architecture Overview
+```txt
+Next.js Frontend
+            ↓
+Flask REST API
+            ↓
+JWT Authentication + Service Layer
+            ↓
+PostgreSQL Database (Neon)
+            ↓
+Ingestion Pipeline
+            ↓
+Game + Odds + Final Score Updates
+            ↓
+Prediction Grading Service
+            ↓
+Stats API + Analytics Dashboard            
+```
+---
+
+
 
 ## Developer Contributions
 
@@ -68,8 +134,9 @@ This project was independently designed and implemented with a strong emphasis o
   - Clean routing and predictable API behavior
 - Deployed a production-ready, multi-service architecture:
   - Backend API hosted on Render with environment-based configuration
-  - PostgreSQL database provisioned via Render and accessed securely via connection strings
+  - PostgreSQL database provisioned via Neon and accessed securely via connection strings
   - Frontend deployed on Vercel and integrated via CORS-safe API communication
+- Containerized frontend and backend services using Docker
 
 ---
 
@@ -77,13 +144,31 @@ This project was independently designed and implemented with a strong emphasis o
 
 - **Python** (backend application logic)
 - **Flask** (REST API)
-- **PostgreSQL** (persistent relational storage)
+- **Neon PostgreSQL** (persistent relational storage)
 - **SQLAlchemy** (ORM + query layer)
 - **JWT Authentication** (token-based auth)
 - **CSV Ingestion Pipelines** (games/odds/results)
 - **Next.js / React** (lightweight frontend for consuming the API)
 - **Vercel** (frontend deployment)
+- **Render** (backend deployment)
+- **Flask-CORS** (cross-origin resource sharing management)
+- **Docker** (containerization)
 - **Git/GitHub** (branching, commit history hygiene)
+
+---
+
+## Docker Setup
+
+Run the entire application stack:
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+- Frontend: localhost:3000
+- Backend: localhost:5000
 
 ---
 
@@ -92,53 +177,66 @@ This project was independently designed and implemented with a strong emphasis o
 - Free, reliable APIs for both **betting odds** and **real-time/final scores** are inconsistent or rate-limited, so this version supports **manual CSV uploads** for:
   - weekly odds
   - final scores/results
-- The deployed frontend is intentionally simple; the project’s core value is the **backend system design**
 - This version grades user picks after results ingestion rather than live-updating during games
 
 ---
 ## Project Structure
 ```
 .
-├── app/ # Flask application package
-│ ├── api/ # API route modules
-│ │ ├── auth.py # Auth endpoints
-│ │ ├── predictions.py # Prediction endpoints
-│ │ ├── users.py # User + stats endpoints
-│ │ └── weeks.py # Week/game listing endpoints
-│ ├── config.py # App configuration
-│ ├── db_init.py # DB initialization helpers
-│ ├── extensions.py # Flask extensions
-│ ├── models.py # SQLAlchemy models
-│ ├── routes.py # Blueprint wiring
-│ └── init.py # App factory
+├── assets/
 │
-├── data/ # Weekly CSV inputs
-│ ├── nfl/2025/week1_nfl.csv
-│ └── ncaaf/2025/week1_ncaaf.csv
+├── backend/
+│   ├── app/
+│   │   ├── db/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── config.py
+│   │   ├── main.py
+│   │   └── __init__.py
+│   │
+│   ├── scripts/
+│   │   └── ingest_week.py
+│   │
+│   ├── .dockerignore
+│   ├── .env.example
+│   ├── Dockerfile
+│   └── requirements.txt
 │
-├── scripts/ # Ingest + grading utilities
-│ ├── load_games_from_csv.py
-│ ├── load_odds_from_csv.py
-│ ├── grade_predictions.py
-│ └── create_test_predictions.py
+├── frontend/
+│   ├── app/
+│   │   ├── _components/
+│   │   │   └── HeaderNav.tsx
+│   │   ├── login/
+│   │   │   └── page.tsx
+│   │   ├── register/
+│   │   │   └── page.tsx
+│   │   ├── stats/
+│   │   │   └── page.tsx
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   │
+│   ├── public/
+│   ├── services/
+│   │   ├── api.ts
+│   │   ├── auth.ts
+│   │   ├── picks.ts
+│   │   ├── stats.ts
+│   │   └── validation.ts
+│   │
+│   ├── types/
+│   │   ├── picks.ts
+│   │   └── stats.ts
+│   │
+│   ├── .dockerignore
+│   ├── Dockerfile
+│   ├── next.config.ts
+│   ├── package.json
+│   └── tsconfig.json
 │
-├── frontend/ # Next.js frontend
-│ ├── app/
-│ │ ├── _components/HeaderNav.tsx
-│ │ ├── login/page.tsx
-│ │ ├── register/page.tsx
-│ │ ├── stats/page.tsx
-│ │ ├── layout.tsx
-│ │ └── page.tsx # Main picks UI
-│ ├── lib/
-│ │ ├── api.ts # API wrapper
-│ │ └── auth.ts # Auth helpers
-│ └── package.json
-│
-├── ingest_week.py # Weekly ingest convenience script
-├── run.py # Backend entrypoint
-├── requirements.txt
-├── .env.example
+├── docker-compose.yml
+├── .gitignore
 └── README.md
 ```
 ---
@@ -147,39 +245,28 @@ This project was independently designed and implemented with a strong emphasis o
 
 1. Clone the repository
 ```bash
-git clone https://github.com/hjlinto/your-football-prediction-repo.git
+git clone https://github.com/hjlinto/nfl-ncaaf-prediction-pipeline
 ```
-2. Set up the backend
+2. Configure environment variables
 ```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-3. Configure environment variables
-```bash
+JWT_SECRET_KEY=your_jwt_secret_key_here
 SECRET_KEY=your_secret_key_here
-DATABASE_URL=postgresql://postgres:password@localhost:5432/footballpredictions
+DATABASE_URL=your_postgresql_connection_string
 ```
-4. Run database setup and start the API
+3. Start the application
 ```bash
-flask run
+docker compose up --build
 ```
-5. Start the frontend
-```bash
-cd ../frontend
-npm install
-npm run dev
-```
-6. Open:
+4. Open:
 - Frontend: http://localhost:3000/
 - API: http://127.0.0.1:5000/
+
 ---
+
 ## Reflections
 
 - With a reliable odds and scores provider, manual CSV uploads could be replaced with automated ingestion pipelines.
 - I would integrate a predictive model to generate baseline picks, allowing direct comparison between user performance and algorithmic strategies.
-- I would expand the analytics layer to include week-by-week trends, category-specific accuracy, and ROI-style performance metrics for spread and total picks.
 ---
 ## Author
 
