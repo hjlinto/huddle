@@ -103,10 +103,10 @@ export default function LoginPage() {
             <form onSubmit={onSubmit} className="grid gap-4">
               <label className="grid gap-2">
                 <span className="text-sm font-semibold text-slate-700">
-                  Email
+                  Username or Email
                 </span>
                 <input
-                  placeholder="Username or email"
+                  placeholder="you@example.com"
                   value={identifier}
                   onChange={(event) => setIdentifier(event.target.value)}
                   className={inputClass}
