@@ -17,8 +17,15 @@ export type Game = {
   season: number;
   week: number;
   game_date?: string;
+  game_time?: string | null;
+  source?: string | null;
+  source_event_id?: string | null;
   home_team: string;
   away_team: string;
+  home_rank?: number | null;
+  away_rank?: number | null;
+  home_record?: string | null;
+  away_record?: string | null;
   home_score?: number | null;
   away_score?: number | null;
   home_team_wins?: boolean | null;

@@ -64,6 +64,7 @@ Current functionality includes:
 
 - **Game, Odds, and Results Pipeline**
   - Weekly ingestion of games and betting lines (spread/total) via CSV
+  - Weekly FBS NCAAF ingestion from ESPN scoreboard data
 
 - **Prediction Submission**
   - Users can submit picks for:
@@ -171,6 +172,52 @@ Services:
 - Backend: localhost:5000
 
 ---
+
+## ESPN FBS Ingestion
+
+Preview one FBS college football week from ESPN without changing the database:
+
+```bash
+cd backend
+python scripts/ingest_espn_week.py --season 2026 --week 1 --dry-run
+```
+
+Inspect the raw ESPN field groups exposed by the scoreboard response:
+
+```bash
+cd backend
+python scripts/ingest_espn_week.py --season 2026 --week 1 --dry-run --fields
+```
+
+Print the full raw ESPN JSON payload:
+
+```bash
+cd backend
+python scripts/ingest_espn_week.py --season 2026 --week 1 --dry-run --raw-json
+```
+
+Ingest one week into the configured database:
+
+```bash
+cd backend
+python scripts/ingest_espn_week.py --season 2026 --week 1
+```
+
+The ESPN ingestion stores game date, kickoff time, home/away teams,
+home/away rankings, home/away records, spread, and total. It uses ESPN FBS
+group `80` and regular season type `2` by default.
+
+Because the game schema changed, reset a local database before testing a
+fresh ingestion:
+
+```bash
+cd backend
+python scripts/db/reset_tables.py --confirm-reset
+```
+
+Use the same reset command only after pointing `DATABASE_URL` at the intended
+database. Be careful with production or Neon databases: this drops every app
+table before recreating them.
 
 ## Assumptions & Limitations
 

@@ -18,6 +18,9 @@ import {
 } from "@/services/picks";
 import type { DisplayGame, League, Pick } from "@/types/picks";
 
+const seasons = [2026, 2025, 2024];
+const weeks = Array.from({ length: 18 }, (_, index) => index + 1);
+
 const emptyPick: Pick = {
   predicted_winner: "",
   predicted_spread: "",
@@ -28,8 +31,8 @@ const selectClass =
   "h-11 min-w-28 rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-200";
 
 export default function PicksPage() {
-  const [league, setLeague] = useState<League>("nfl");
-  const [season, setSeason] = useState<number>(2025);
+  const [league, setLeague] = useState<League>("ncaaf");
+  const [season, setSeason] = useState<number>(2026);
   const [week, setWeek] = useState<number>(1);
 
   const [games, setGames] = useState<DisplayGame[]>([]);
@@ -179,8 +182,11 @@ export default function PicksPage() {
                 onChange={(event) => setSeason(Number(event.target.value))}
                 className={selectClass}
               >
-                <option value={2025}>2025</option>
-                <option value={2024}>2024</option>
+                {seasons.map((seasonOption) => (
+                  <option key={seasonOption} value={seasonOption}>
+                    {seasonOption}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -191,8 +197,11 @@ export default function PicksPage() {
                 onChange={(event) => setWeek(Number(event.target.value))}
                 className={selectClass}
               >
-                <option value={1}>Week 1</option>
-                <option value={2}>Week 2</option>
+                {weeks.map((weekOption) => (
+                  <option key={weekOption} value={weekOption}>
+                    Week {weekOption}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -249,13 +258,19 @@ export default function PicksPage() {
                       </div>
 
                       <h2 className="text-2xl font-bold tracking-tight text-slate-950">
-                        {game.away_team}{" "}
+                        {formatTeam(game.away_rank, game.away_team)}{" "}
                         <span className="text-slate-400">at</span>{" "}
-                        {game.home_team}
+                        {formatTeam(game.home_rank, game.home_team)}
                       </h2>
 
                       <p className="mt-2 text-sm font-medium text-slate-500">
-                        {game.game_date ?? "Date TBD"}
+                        {formatGameDateTime(game)}
+                      </p>
+
+                      <p className="mt-2 text-sm font-semibold text-slate-600">
+                        {game.away_record ?? "Away record TBD"}{" "}
+                        <span className="text-slate-400">/</span>{" "}
+                        {game.home_record ?? "Home record TBD"}
                       </p>
                     </div>
 
@@ -319,6 +334,31 @@ export default function PicksPage() {
       </section>
     </main>
   );
+}
+
+function formatGameDateTime(game: DisplayGame): string {
+  if (!game.game_date) {
+    return "Date TBD";
+  }
+
+  if (!game.game_time) {
+    return game.game_date;
+  }
+
+  return `${game.game_date} ${formatGameTime(game.game_time)}`;
+}
+
+function formatGameTime(gameTime: string): string {
+  const [hours, minutes] = gameTime.split(":");
+  const parsedHours = Number(hours);
+  const suffix = parsedHours >= 12 ? "PM" : "AM";
+  const displayHours = parsedHours % 12 || 12;
+
+  return `${displayHours}:${minutes} ${suffix}`;
+}
+
+function formatTeam(rank: number | null | undefined, team: string): string {
+  return rank ? `#${rank} ${team}` : team;
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

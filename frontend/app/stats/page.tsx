@@ -21,6 +21,8 @@ import type {
 
 const selectClass =
   "h-11 min-w-32 rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-200";
+const seasons = [2026, 2025, 2024];
+const weeks = Array.from({ length: 18 }, (_, index) => index + 1);
 
 function pct(value: number): string {
   if (!Number.isFinite(value)) {
@@ -74,10 +76,10 @@ function StatCard({
 }
 
 export default function StatsPage() {
-  const [leagueFilter, setLeagueFilter] = useState<LeagueFilter>("nfl");
+  const [leagueFilter, setLeagueFilter] = useState<LeagueFilter>("ncaaf");
   const [weekMode, setWeekMode] = useState<WeekMode>("overall");
 
-  const [season, setSeason] = useState<number>(2025);
+  const [season, setSeason] = useState<number>(2026);
   const [week, setWeek] = useState<number>(1);
   const [maxWeek, setMaxWeek] = useState<number>(18);
 
@@ -213,8 +215,11 @@ export default function StatsPage() {
                 onChange={(event) => setSeason(Number(event.target.value))}
                 className={selectClass}
               >
-                <option value={2025}>2025</option>
-                <option value={2024}>2024</option>
+                {seasons.map((seasonOption) => (
+                  <option key={seasonOption} value={seasonOption}>
+                    {seasonOption}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -251,8 +256,11 @@ export default function StatsPage() {
                     onChange={(event) => setWeek(Number(event.target.value))}
                     className={selectClass}
                   >
-                    <option value={1}>Week 1</option>
-                    <option value={2}>Week 2</option>
+                    {weeks.map((weekOption) => (
+                      <option key={weekOption} value={weekOption}>
+                        Week {weekOption}
+                      </option>
+                    ))}
                   </select>
                 </label>
               )}

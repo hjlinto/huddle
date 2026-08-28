@@ -77,6 +77,13 @@ def _upsert_game(row: dict, league: str, season: int, week: int) -> tuple[Game, 
         )
 
     game.game_date = datetime.strptime(row["game_date"], "%Y-%m-%d").date()
+    game.game_time = _optional_time(row.get("game_time"))
+    game.source = _optional_string(row.get("source"))
+    game.source_event_id = _optional_string(row.get("source_event_id"))
+    game.home_rank = _optional_int(row.get("home_rank"))
+    game.away_rank = _optional_int(row.get("away_rank"))
+    game.home_record = _optional_string(row.get("home_record"))
+    game.away_record = _optional_string(row.get("away_record"))
     game.home_score = _optional_int(row.get("home_score"))
     game.away_score = _optional_int(row.get("away_score"))
     game.home_team_wins = _optional_bool(row.get("home_team_wins"))
@@ -120,6 +127,26 @@ def _optional_float(value: str | None) -> float | None:
         return None
 
     return float(value)
+
+
+def _optional_time(value: str | None):
+    """
+    Convert optional CSV time values.
+    """
+    if value in (None, "", "NA"):
+        return None
+
+    return datetime.strptime(value, "%H:%M:%S").time()
+
+
+def _optional_string(value: str | None) -> str | None:
+    """
+    Normalize optional CSV string values.
+    """
+    if value in (None, "", "NA"):
+        return None
+
+    return value.strip()
 
 
 def _optional_bool(value: str | None) -> bool | None:
