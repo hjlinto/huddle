@@ -4,7 +4,7 @@
  * Owns backend request construction and response handling.
  */
 
-import { getToken } from "@/services/auth";
+import { clearToken, getToken } from "@/services/auth";
 
 function getApiUrl(): string {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -38,8 +38,40 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || `Request failed with status ${response.status}`);
+
+    if (response.status === 401 && isAuthExpiredMessage(message)) {
+      clearToken();
+
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+
+      throw new Error("Your session expired. Please sign in again.");
+    }
+
+    throw new Error(
+      readErrorMessage(message) || `Request failed with status ${response.status}`
+    );
   }
 
   return response.json() as Promise<T>;
+}
+
+function readErrorMessage(message: string): string {
+  try {
+    const parsed = JSON.parse(message) as { message?: string; msg?: string };
+    return parsed.message || parsed.msg || message;
+  } catch {
+    return message;
+  }
+}
+
+function isAuthExpiredMessage(message: string): boolean {
+  const normalizedMessage = readErrorMessage(message).toLowerCase();
+
+  return (
+    normalizedMessage.includes("token has expired") ||
+    normalizedMessage.includes("missing authorization") ||
+    normalizedMessage.includes("invalid token")
+  );
 }

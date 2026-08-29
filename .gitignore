@@ -5,6 +5,10 @@ __pycache__/
 .venv/
 venv/
 
+# Modeling outputs
+modeling/data/
+modeling/predictions/
+
 # Backend
 backend/.env
 
